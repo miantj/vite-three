@@ -4,41 +4,20 @@
 
 <script setup>
 import * as THREE from "three";
-import Stats from "three/examples/jsm/libs/stats.module";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import * as dat from "dat.gui";
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const container = ref(null);
-let scene, camera, renderer, stat, controls, cube, animationFrameId;
+let scene, camera, renderer, controls, orbitControls, gui, cube, sphere, animationFrameId, clock;
 
 onMounted(() => {
   init();
-  // 添加键盘事件监听
-  window.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
   cleanup();
-  window.removeEventListener('keydown', handleKeyDown);
 });
-
-function handleKeyDown(event) {
-  const speed = 0.1;
-  switch(event.key) {
-    case 'ArrowUp':
-      cube.position.y += speed;
-      break;
-    case 'ArrowDown':
-      cube.position.y -= speed;
-      break;
-    case 'ArrowLeft':
-      cube.position.x -= speed;
-      break;
-    case 'ArrowRight':
-      cube.position.x += speed;
-      break;
-  }
-}
 
 function init() {
   scene = new THREE.Scene();
@@ -46,42 +25,95 @@ function init() {
   const w = container.value.clientWidth;
   const h = container.value.clientHeight;
   
+  // 创建 GUI
+  gui = new dat.GUI({ autoPlace: false });
+  gui.domElement.style.position = 'absolute';
+  gui.domElement.style.top = '0';
+  gui.domElement.style.right = '0';
+  
   // 添加坐标轴
   const axes = new THREE.AxesHelper(2, 2, 2);
   scene.add(axes);
   
   // 创建立方体
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshNormalMaterial();
-  cube = new THREE.Mesh(geometry, material);
+  const cubeControls = {
+    color: 0xff0000,
+  };
+  
+  const cubeG = new THREE.BoxGeometry(1, 1, 1);
+  const cubeM = new THREE.MeshBasicMaterial({ color: cubeControls.color });
+  cube = new THREE.Mesh(cubeG, cubeM);
   scene.add(cube);
+  
+  gui.addColor(cubeControls, "color").onChange(() => {
+    cubeM.color.set(cubeControls.color);
+  });
+  
+  // 创建球体
+  const sphereG = new THREE.SphereGeometry(0.6);
+  const sphereM = new THREE.MeshNormalMaterial();
+  sphere = new THREE.Mesh(sphereG, sphereM);
+  scene.add(sphere);
+  
+  gui.add(sphereM, "wireframe");
+  
+  // 控制方块位置
+  const foldrel1 = gui.addFolder("方块位置");
+  foldrel1.add(cube.position, "x", -3, 3, 0.01);
+  foldrel1.add(cube.position, "y", -3, 3, 0.01);
+  foldrel1.add(cube.position, "z", -3, 3, 0.01);
+  
+  // 添加环境光
+  const light = new THREE.AmbientLight();
+  scene.add(light);
   
   // 相机
   camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-  camera.position.set(2, 2, 2);
+  camera.position.set(5, 5, 5);
   camera.lookAt(0, 0, 0);
+  
+  // 控制相机位置
+  const foldrel = gui.addFolder("相机位置");
+  foldrel.add(camera.position, "x", -5, 5, 0.01).name("相机位置-x");
+  foldrel.add(camera.position, "y", -5, 5, 0.01).name("相机位置-y");
+  foldrel.add(camera.position, "z", -5, 5, 0.01).name("相机位置-z");
+  
+  // 运动控制
+  controls = {
+    r: 1.5,
+    speed: "1",
+    stop: () => {
+      controls.speed = 0;
+    },
+  };
+  
+  gui.add(controls, "r", 0.3).name("运动半径");
+  gui.add(controls, "speed", 0, 5).name("运动速度");
+  gui.add(controls, "stop");
   
   // 渲染器
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
   
-  // 控制器
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  
-  // 性能监控
-  stat = new Stats();
-  stat.dom.style.position = 'absolute';
+  // 轨道控制器
+  orbitControls = new OrbitControls(camera, renderer.domElement);
   
   // 添加到容器
   container.value.appendChild(renderer.domElement);
-  container.value.appendChild(stat.dom);
+  container.value.appendChild(gui.domElement);
+  
+  // 初始化时钟
+  clock = new THREE.Clock();
   
   // 动画
   function tick() {
-    controls.update();
+    const time = clock.getElapsedTime();
+    
+    sphere.position.x = Math.sin(time * controls.speed) * controls.r;
+    sphere.position.z = Math.cos(time * controls.speed) * controls.r;
+    
+    orbitControls.update();
     renderer.render(scene, camera);
-    stat.update();
     animationFrameId = requestAnimationFrame(tick);
   }
   tick();
@@ -108,8 +140,12 @@ function cleanup() {
     renderer.forceContextLoss();
   }
   
-  if (controls) {
-    controls.dispose();
+  if (orbitControls) {
+    orbitControls.dispose();
+  }
+  
+  if (gui) {
+    gui.destroy();
   }
   
   window.removeEventListener('resize', handleResize);

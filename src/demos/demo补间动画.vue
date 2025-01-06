@@ -10,7 +10,7 @@ import * as TWEEN from "three/examples/jsm/libs/tween.module.js";
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const container = ref(null);
-let scene, camera, renderer, stat, controls, sphere, tween, animationFrameId;
+let scene, camera, renderer, controls, stat, sphere, tween, animationFrameId;
 
 onMounted(() => {
   init();
@@ -60,11 +60,16 @@ function init() {
   
   // 设置运动函数
   tween.easing(TWEEN.Easing.Quadratic.InOut);
-  // 设置循环
-  tween.repeat(Infinity);
-  // 设置往复运动
-  tween.yoyo(true);
-  // 启动动画
+  
+  // 可选设置：
+  // 设置无限循环
+  // tween.repeat(Infinity);
+  // 设置循环往复
+  // tween.yoyo(true);
+  // 设置延迟
+  // tween.delay(3000);
+  
+  // 启动补间动画
   tween.start();
   
   // 相机
@@ -75,10 +80,10 @@ function init() {
   // 渲染器
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
   
-  // 控制器
+  // 轨道控制器
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
   
   // 性能监控
   stat = new Stats();
@@ -124,6 +129,17 @@ function cleanup() {
     controls.dispose();
   }
   
+  // 清理球体的几何体和材质
+  if (sphere) {
+    sphere.geometry.dispose();
+    sphere.material.dispose();
+  }
+  
+  // 停止补间动画
+  if (tween) {
+    tween.stop();
+  }
+  
   window.removeEventListener('resize', handleResize);
   
   if (animationFrameId) {
@@ -132,11 +148,6 @@ function cleanup() {
   
   if (container.value) {
     container.value.innerHTML = '';
-  }
-  
-  // 停止补间动画
-  if (tween) {
-    tween.stop();
   }
 }
 </script>

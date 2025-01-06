@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import 汽车Demo from "./demos/汽车.vue";
+import 切水果Demo from "./demos/切水果.vue";
 import 基础示例Demo from "./demos/demo.vue";
 import 控制器示例Demo from "./demos/demo2.vue";
 import 组合示例Demo from "./demos/demo3.vue";
@@ -14,6 +15,7 @@ import 小车Demo from "./demos/小车.vue";
 
 const demoList = [
   { name: "汽车", component: 汽车Demo },
+  { name: "切水果", component: 切水果Demo },
   { name: "基础示例", component: 基础示例Demo },
   { name: "控制器示例", component: 控制器示例Demo },
   { name: "组合示例", component: 组合示例Demo },
@@ -35,7 +37,7 @@ const currentDemo = ref(demoList[0]);
       <button
         v-for="demo in demoList"
         :key="demo.name"
-        :class="{ active: currentDemo === demo }"
+        :class="{ active: currentDemo.name === demo.name }"
         @click="currentDemo = demo"
       >
         {{ demo.name }}
@@ -51,23 +53,44 @@ const currentDemo = ref(demoList[0]);
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #1a1a1a;
 }
 
 .demo-buttons {
   padding: 1rem;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
 }
 
 button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #ffffff;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #3a3a3a;
+  border-color: #5a5a5a;
+  transform: translateY(-1px);
 }
 
 button.active {
   background: #42b883;
   color: white;
+  border-color: #42b883;
+  box-shadow: 0 2px 8px rgba(66, 184, 131, 0.3);
+}
+
+button.active:hover {
+  background: #3aa876;
+  border-color: #3aa876;
 }
 </style>

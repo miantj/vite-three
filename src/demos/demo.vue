@@ -8,7 +8,7 @@ import Stats from "three/examples/jsm/libs/stats.module";
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const container = ref(null);
-let scene, camera, renderer, stat, cubes = [], animationFrameId;
+let scene, camera, renderer, stat, cubes = [], animationFrameId, clock;
 
 onMounted(() => {
   init();
@@ -19,12 +19,14 @@ onUnmounted(() => {
 });
 
 function init() {
-  // 创建场景
   scene = new THREE.Scene();
   
-  // 获取容器尺寸
   const w = container.value.clientWidth;
   const h = container.value.clientHeight;
+  
+  // 性能监控
+  stat = new Stats();
+  stat.dom.style.position = 'absolute';
   
   // 添加坐标轴
   const axes = new THREE.AxesHelper(2, 2, 2);
@@ -52,7 +54,7 @@ function init() {
     scene.add(cube);
   });
   
-  // 光线
+  // 添加环境光
   const light = new THREE.AmbientLight();
   scene.add(light);
   
@@ -65,16 +67,14 @@ function init() {
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
   
-  // 性能监控
-  stat = new Stats();
-  stat.dom.style.position = 'absolute';
-  
   // 添加到容器
   container.value.appendChild(renderer.domElement);
   container.value.appendChild(stat.dom);
   
+  // 初始化时钟
+  clock = new THREE.Clock();
+  
   // 动画
-  const clock = new THREE.Clock();
   function tick() {
     const time = clock.getElapsedTime();
     
@@ -110,6 +110,13 @@ function cleanup() {
     renderer.dispose();
     renderer.forceContextLoss();
   }
+  
+  // 清理所有立方体的几何体和材质
+  cubes.forEach(cube => {
+    cube.geometry.dispose();
+    cube.material.dispose();
+  });
+  cubes = [];
   
   window.removeEventListener('resize', handleResize);
   

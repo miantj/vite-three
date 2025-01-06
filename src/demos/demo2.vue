@@ -4,12 +4,11 @@
 
 <script setup>
 import * as THREE from "three";
-import Stats from "three/examples/jsm/libs/stats.module";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const container = ref(null);
-let scene, camera, renderer, stat, controls, animationFrameId;
+let scene, camera, renderer, controls, animationFrameId;
 
 onMounted(() => {
   init();
@@ -31,36 +30,33 @@ function init() {
   
   // 创建立方体
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshNormalMaterial();
+  const material = new THREE.MeshBasicMaterial();
   const cube = new THREE.Mesh(geometry, material);
   scene.add(cube);
   
+  // 添加环境光
+  const light = new THREE.AmbientLight();
+  scene.add(light);
+  
   // 相机
   camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-  camera.position.set(2, 2, 2);
+  camera.position.set(5, 5, 5);
   camera.lookAt(0, 0, 0);
   
   // 渲染器
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
   
-  // 控制器
+  // 轨道控制器
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  
-  // 性能监控
-  stat = new Stats();
-  stat.dom.style.position = 'absolute';
   
   // 添加到容器
   container.value.appendChild(renderer.domElement);
-  container.value.appendChild(stat.dom);
   
   // 动画
   function tick() {
     controls.update();
     renderer.render(scene, camera);
-    stat.update();
     animationFrameId = requestAnimationFrame(tick);
   }
   tick();

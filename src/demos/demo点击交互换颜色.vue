@@ -9,36 +9,41 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const container = ref(null);
-let scene, camera, renderer, stat, controls, raycaster, mouse, animationFrameId;
-let cubes = [];
+let scene, camera, renderer, controls, stat, raycaster, mouse, animationFrameId;
+let sphere, sphere2, sphere3;
 
 onMounted(() => {
   init();
-  // 添加点击事件监听
-  window.addEventListener('click', onClick);
 });
 
 onUnmounted(() => {
   cleanup();
-  window.removeEventListener('click', onClick);
 });
 
 function onClick(event) {
-  // 计算鼠标在画布上的归一化坐标
+  // 获取容器边界
   const bounds = container.value.getBoundingClientRect();
+  
+  // 计算鼠标在容器内的相对位置
   mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
   mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
   
-  // 更新射线
+  // 通过摄像机和鼠标的位置更新射线
   raycaster.setFromCamera(mouse, camera);
   
-  // 检测相交的物体
-  const intersects = raycaster.intersectObjects(cubes);
+  // 计算物体和射线的焦点
+  const intersects = raycaster.intersectObjects([sphere, sphere2, sphere3]);
   
   if (intersects.length > 0) {
-    // 改变第一个相交物体的颜色
-    const material = intersects[0].object.material;
-    material.color.setHex(Math.random() * 0xffffff);
+    const selectedObject = intersects[0].object;
+    if (selectedObject._isSelect) {
+      selectedObject._isSelect = false;
+      selectedObject.material.color.set(selectedObject._isColor);
+    } else {
+      selectedObject._isSelect = true;
+      selectedObject._isColor = selectedObject.material.color.getHex();
+      selectedObject.material.color.set(0xffff00);
+    }
   }
 }
 
@@ -48,32 +53,55 @@ function init() {
   const w = container.value.clientWidth;
   const h = container.value.clientHeight;
   
-  // 初始化射线和鼠标位置
+  // 添加坐标轴
+  const axes = new THREE.AxesHelper(5, 5, 5);
+  scene.add(axes);
+  
+  // 创建三个球
+  sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+    })
+  );
+  sphere.position.x = 4;
+  
+  sphere2 = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0x00ff00,
+    })
+  );
+  
+  sphere3 = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0x0000ff,
+    })
+  );
+  sphere3.position.x = -4;
+  
+  scene.add(sphere, sphere2, sphere3);
+  
+  // 创建射线和鼠标向量
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
   
-  // 创建多个立方体
-  for (let i = 0; i < 5; i++) {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.x = (i - 2) * 2;
-    cubes.push(cube);
-    scene.add(cube);
-  }
+  // 添加点击事件监听
+  container.value.addEventListener('click', onClick);
   
   // 相机
   camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-  camera.position.set(0, 0, 10);
+  camera.position.set(0, 10, 9);
   camera.lookAt(0, 0, 0);
   
   // 渲染器
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
   
-  // 控制器
+  // 轨道控制器
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
   
   // 性能监控
   stat = new Stats();
@@ -116,6 +144,19 @@ function cleanup() {
   
   if (controls) {
     controls.dispose();
+  }
+  
+  // 清理所有球体的几何体和材质
+  [sphere, sphere2, sphere3].forEach(sphere => {
+    if (sphere) {
+      sphere.geometry.dispose();
+      sphere.material.dispose();
+    }
+  });
+  
+  // 移除事件监听
+  if (container.value) {
+    container.value.removeEventListener('click', onClick);
   }
   
   window.removeEventListener('resize', handleResize);

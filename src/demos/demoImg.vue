@@ -25,59 +25,67 @@ function init() {
   const w = container.value.clientWidth;
   const h = container.value.clientHeight;
   
-  // 添加坐标轴
-  const axes = new THREE.AxesHelper(2, 2, 2);
-  scene.add(axes);
-  
-  // 创建纹理加载器
-  const textureLoader = new THREE.TextureLoader();
-  
-  // 加载纹理
-  const colorTexture = textureLoader.load('/textures/door/color.jpg');
-  const alphaTexture = textureLoader.load('/textures/door/alpha.jpg');
-  const heightTexture = textureLoader.load('/textures/door/height.jpg');
-  const normalTexture = textureLoader.load('/textures/door/normal.jpg');
-  const ambientOcclusionTexture = textureLoader.load('/textures/door/ambientOcclusion.jpg');
-  const metalnessTexture = textureLoader.load('/textures/door/metalness.jpg');
-  const roughnessTexture = textureLoader.load('/textures/door/roughness.jpg');
+  // 贴图加载器
+  const loader = new THREE.TextureLoader();
+  const texture = loader.load(
+    "https://images.squarespace-cdn.com/content/v1/5be5c337a9e02874136908f2/1580809645632-FJ0TMYHIB9Z9LPLCKRGC/Maple.jpg?format=2500w"
+  );
+  const texture2 = loader.load(
+    "https://p5.itc.cn/images01/20220323/7ba16d4343e8420ba0828b510fe9b1fc.jpeg"
+  );
   
   // 创建平面
-  const geometry = new THREE.PlaneGeometry(1.5, 2);
-  const material = new THREE.MeshStandardMaterial({
-    map: colorTexture,
-    transparent: true,
-    alphaMap: alphaTexture,
-    aoMap: ambientOcclusionTexture,
-    displacementMap: heightTexture,
-    displacementScale: 0.1,
-    normalMap: normalTexture,
-    metalnessMap: metalnessTexture,
-    roughnessMap: roughnessTexture
+  const planeG = new THREE.PlaneGeometry(4, 4);
+  const planeM = new THREE.MeshStandardMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
   });
-  
-  const plane = new THREE.Mesh(geometry, material);
+  const plane = new THREE.Mesh(planeG, planeM);
+  plane.rotation.x = -1.5;
+  plane.receiveShadow = true;
   scene.add(plane);
   
-  // 添加灯光
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
+  // 创建立方体
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const m1 = new THREE.MeshStandardMaterial({
+    map: texture,
+  });
+  const m2 = new THREE.MeshStandardMaterial({
+    map: texture2,
+  });
+  const cube = new THREE.Mesh(geometry, [m1, m2, m1, m2, m1, m2]);
+  cube.position.y = 0.51;
+  cube.rotation.x = -1.5;
+  cube.castShadow = true;
+  scene.add(cube);
   
-  const pointLight = new THREE.PointLight(0xffffff, 0.5);
-  pointLight.position.set(2, 3, 4);
-  scene.add(pointLight);
+  // 添加光源
+  const light = new THREE.AmbientLight(0xffffff, 0.2);
+  
+  const light2 = new THREE.DirectionalLight(0xffffff);
+  light2.position.set(1, 1, 1);
+  light2.castShadow = true;
+  // 设置阴影的相关参数
+  light2.shadow.mapSize.width = 2048;
+  light2.shadow.mapSize.height = 2048;
+  // 调整阴影的范围
+  light2.shadow.camera.near = 0.5;
+  light2.shadow.camera.far = 500;
+  
+  scene.add(light, light2);
   
   // 相机
   camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-  camera.position.set(0, 0, 2);
+  camera.position.set(0, 1, 3);
   camera.lookAt(0, 0, 0);
   
   // 渲染器
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
   
   // 控制器
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
   
   // 性能监控
   stat = new Stats();
