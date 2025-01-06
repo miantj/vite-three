@@ -84,7 +84,6 @@ const plane = new THREE.Mesh(planeG, planeM);
 scene.add(plane);
 plane.rotation.x = -0.5 * Math.PI;
 
-
 // 光线
 const light = new THREE.AmbientLight();
 scene.add(light);
@@ -98,8 +97,9 @@ camera.lookAt(0, 0, 0);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(w, h);
 
-document.body.append(renderer.domElement);
-document.body.append(stat.dom);
+const container = document.querySelector(".demo-container");
+container.appendChild(renderer.domElement);
+container.appendChild(stat.dom);
 
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 renderer.render(scene, camera);
@@ -117,3 +117,17 @@ const tick = () => {
   requestAnimationFrame(tick);
 };
 tick();
+
+window.addEventListener("resize", () => {
+  const container = document.querySelector(".demo-container");
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(width, height);
+});
+
+// 初始化时设置正确的尺寸
+renderer.setSize(container.clientWidth, container.clientHeight);
